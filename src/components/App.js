@@ -5,6 +5,9 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
+import NextButton from "./NextButton";
+import ProgressBar from "./ProgressBar";
+import FinishScreen from "./FinishScreen";
 //upload the git before the end of day please
 
 export const ACTIONS = {
@@ -13,6 +16,8 @@ export const ACTIONS = {
   DATAFAILED: "dataFailed",
   ACTIVE: "active",
   NEWANSWER: "newAnswer",
+  NEXTQUESTION: "nextQuestion",
+  FINISHED: "finished",
 };
 
 const initialState = {
@@ -37,12 +42,21 @@ const reducer = (state, action) => {
     case "start":
       return { ...state, status: ACTIONS.ACTIVE };
     case ACTIONS.NEWANSWER:
-      const question = state.questions.at(state.index);
+      //current question... getting it from current state
+      // const question = state.questions.at(state.index);
       return {
         ...state,
-        answer: action.payload,
-        points: action.payload === question.correctOption,
+        answer: action.payload.index,
+        points: action.payload.earnedPoint,
       };
+    case ACTIONS.NEXTQUESTION:
+      return {
+        ...state,
+        answer: null,
+        index: state.index + 1,
+      };
+    case ACTIONS.FINISHED:
+      return { ...state, status: ACTIONS.FINISHED };
     default:
       throw new Error("Action unknown");
   }
@@ -55,7 +69,7 @@ function App() {
   );
   //derived state
   const questionCount = questions.length;
-  // const questionCount = 15;
+  const maxPoints = questions.reduce((prev, curr) => prev + curr.points, 0);
 
   useEffect(() => {
     dispatch({ type: ACTIONS.LOADING });
@@ -63,14 +77,6 @@ function App() {
       .then((res) => res.json())
       .then((data) => dispatch({ type: ACTIONS.DATARECEIVED, payload: data }))
       .catch((err) => dispatch({ type: ACTIONS.DATAFAILED }));
-
-    // const fetchData = async () => {
-    //   const res = await fetch("http://localhost:8000/questions");
-    //   const data = await res.json();
-    //   console.log(data);
-    //   return data;
-    // };
-    // fetchData();
   }, []);
 
   return (
@@ -82,16 +88,32 @@ function App() {
           <StartScreen count={questionCount} dispatch={dispatch} />
         )}
         {status === ACTIONS.ACTIVE && (
-          <Question
-            questions={questions[index]}
-            dispatch={dispatch}
-            answer={answer}
-          />
+          <>
+            <ProgressBar
+              index={index}
+              count={questionCount}
+              points={points}
+              maxPoints={maxPoints}
+              answer={answer}
+            />
+            <Question
+              questions={questions[index]}
+              dispatch={dispatch}
+              answer={answer}
+              points={points}
+            />
+            <NextButton
+              dispatch={dispatch}
+              answer={answer}
+              index={index}
+              numQuestions={questionCount}
+            />
+          </>
         )}
-        {/* {questions.map((q) => (
-          <div>{q}</div>
-        ))} */}
         {status === ACTIONS.DATAFAILED && <Error />}
+        {status === ACTIONS.FINISHED && (
+          <FinishScreen points={points} maxPoints={maxPoints} />
+        )}
       </Main>
     </div>
   );

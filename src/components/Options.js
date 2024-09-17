@@ -1,11 +1,16 @@
 import React from "react";
 import { ACTIONS } from "./App";
 
-export default function Options({ questions, dispatch, answer }) {
+export default function Options({ questions, dispatch, answer, points }) {
   const hasAnswered = answer !== null;
+  const { options, correctOption, points: point } = questions;
+  const handleClick = (index) => {
+    const earnedPoint = index === correctOption ? points + point : points;
+    dispatch({ type: ACTIONS.NEWANSWER, payload: { index, earnedPoint } });
+  };
   return (
     <div className="options">
-      {questions.options.map((option, index) => (
+      {options.map((option, index) => (
         <button
           className={`btn btn-option ${index === answer ? "answer" : ""} ${
             hasAnswered
@@ -17,7 +22,7 @@ export default function Options({ questions, dispatch, answer }) {
           key={option}
           disabled={hasAnswered}
           onClick={() => {
-            dispatch({ type: ACTIONS.NEWANSWER, payload: index });
+            handleClick(index);
           }}>
           {option}
         </button>
