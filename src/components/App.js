@@ -43,11 +43,14 @@ const reducer = (state, action) => {
       return { ...state, status: ACTIONS.ACTIVE };
     case ACTIONS.NEWANSWER:
       //current question... getting it from current state
-      // const question = state.questions.at(state.index);
+      const question = state.questions.at(state.index);
       return {
         ...state,
-        answer: action.payload.index,
-        points: action.payload.earnedPoint,
+        answer: action.payload,
+        points:
+          action.payload === question.correctOption
+            ? state.points + question.points
+            : state.points,
       };
     case ACTIONS.NEXTQUESTION:
       return {

@@ -1,6 +1,6 @@
 import React from "react";
 import { ACTIONS } from "./App";
-export default function NextButton({ answer, dispatch }) {
+export default function NextButton({ answer, dispatch, index, numQuestions }) {
   return (
     <div>
       {answer ? (
