@@ -8,6 +8,8 @@ import Question from "./Question";
 import NextButton from "./NextButton";
 import ProgressBar from "./ProgressBar";
 import FinishScreen from "./FinishScreen";
+import Timer from "./Timer";
+import Footer from "./Footer";
 //upload the git before the end of day please
 
 export const ACTIONS = {
@@ -18,6 +20,9 @@ export const ACTIONS = {
   NEWANSWER: "newAnswer",
   NEXTQUESTION: "nextQuestion",
   FINISHED: "finished",
+  START: "start",
+  RESTART: "restart",
+  TICK: "tick",
 };
 
 const initialState = {
@@ -27,7 +32,11 @@ const initialState = {
   answer: null,
   points: 0,
   highscore: 0,
+  secondsRemaining: null,
 };
+
+const SEC_PER_QUESTIONS = 30;
+
 const reducer = (state, action) => {
   switch (action.type) {
     case ACTIONS.LOADING:
@@ -40,8 +49,12 @@ const reducer = (state, action) => {
       };
     case ACTIONS.DATAFAILED:
       return { ...state, status: ACTIONS.DATAFAILED };
-    case "start":
-      return { ...state, status: ACTIONS.ACTIVE };
+    case ACTIONS.START:
+      return {
+        ...state,
+        status: ACTIONS.ACTIVE,
+        secondsRemaining: state.questions.length * SEC_PER_QUESTIONS,
+      };
     case ACTIONS.NEWANSWER:
       //current question... getting it from current state
       const question = state.questions.at(state.index);
@@ -66,14 +79,45 @@ const reducer = (state, action) => {
         highscore:
           state.points > state.highscore ? state.points : state.highscore,
       };
+    case ACTIONS.TICK:
+      return {
+        ...state,
+        secondsRemaining: state.secondsRemaining - 1,
+        status: state.secondsRemaining === 0 ? ACTIONS.FINISHED : state.status,
+      };
+    case ACTIONS.RESTART:
+      // questions: [],
+      // status: "loading",
+      // index: 0,
+      // answer: null,
+      // points: 0,
+      // highscore: 0,
+
+      // return {
+      //   ...initialState,
+      //   questions: state.questions,
+      //   status: ACTIONS.DATARECEIVED,
+      //   highscore: action.payload,
+      // };
+      return {
+        ...state,
+        status: ACTIONS.DATARECEIVED,
+        index: 0,
+        answer: null,
+        points: 0,
+        highscore: action.payload,
+        secondsRemaining: 5000,
+      };
     default:
       throw new Error("Action unknown");
   }
 };
 
 function App() {
-  const [{ questions, status, index, answer, points, highscore }, dispatch] =
-    useReducer(reducer, initialState);
+  const [
+    { questions, status, index, answer, points, highscore, secondsRemaining },
+    dispatch,
+  ] = useReducer(reducer, initialState);
   //derived state
   const questionCount = questions.length;
   const maxPoints = questions.reduce((prev, curr) => prev + curr.points, 0);
@@ -109,12 +153,15 @@ function App() {
               answer={answer}
               points={points}
             />
-            <NextButton
-              dispatch={dispatch}
-              answer={answer}
-              index={index}
-              numQuestions={questionCount}
-            />
+            <Footer>
+              <Timer dispatch={dispatch} secondsRemaining={secondsRemaining} />
+              <NextButton
+                dispatch={dispatch}
+                answer={answer}
+                index={index}
+                numQuestions={questionCount}
+              />
+            </Footer>
           </>
         )}
         {status === ACTIONS.DATAFAILED && <Error />}
@@ -123,6 +170,7 @@ function App() {
             points={points}
             maxPoints={maxPoints}
             highscore={highscore}
+            dispatch={dispatch}
           />
         )}
       </Main>
